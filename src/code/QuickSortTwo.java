@@ -1,4 +1,4 @@
-package Sorting;
+package code;
 
 /**
  * Created by nurud on 17/12/2016.
