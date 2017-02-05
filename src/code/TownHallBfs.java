@@ -19,15 +19,11 @@ public class TownHallBfs {
     private class Node {
         Point point;
         Node next;
-        int[] hall;
+        int dist;
 
-        public Node(Point point) {
+        public Node(Point point, int dist) {
             this.point = point;
-        }
-
-        public Node(Point point, int N) {
-            this.point = point;
-            this.hall = new int[N];
+            this.dist = dist;
         }
 
         public Node getNext() {
@@ -42,8 +38,8 @@ public class TownHallBfs {
     private static Node head;
     private static Node tail;
 
-    private void enqueue(Point point, int N) {
-        Node newNode = new Node(point, N);
+    private void enqueue(Point point, int dist) {
+        Node newNode = new Node(point, dist);
         if (isEmpty()) {
             head = newNode;
         } else {
@@ -54,9 +50,6 @@ public class TownHallBfs {
     }
 
     private Node dequeue() {
-        if (isEmpty()) {
-            return null;
-        }
         Node data = head;
         if (head == tail) {
             tail = null;
@@ -70,7 +63,7 @@ public class TownHallBfs {
     }
 
     private static boolean isValid(int x, int y) {
-        if (x < N && x >= 0 && y < N && y >= 0 && map[x][y] != 0 && !visited[x][y]) {
+        if (x < N && x >= 0 && y < N && y >= 0 && map[x][y] == 1  /* && !visited[x][y]*/) {
             return true;
         }
         return false;
@@ -103,6 +96,22 @@ public class TownHallBfs {
                 map[i][j] = sc.nextInt();
             }
         }
+        int bestPoint[] = new int[totalHall];
+        for (int j = 0; j < N; j++) {
+            for (int i = 0; i < N; i++) {
+                if(map[i][j] == 1){
+                    Point start = new Point(i,j);
+                    int newHall[] = doBfs(start, hall);
+                    int distance =  getTotalDistance(newHall);
+                    if(distance < minDistance){
+                        minDistance = distance;
+                        bestPoint = newHall;
+                    }
+                }
+            }
+        }
+
+        System.out.print(maxValueFromDistance(bestPoint));
 
         /*TownHallBfs q = new TownHallBfs();
         for(int o =0; o < 5; o++ ){
@@ -116,31 +125,52 @@ public class TownHallBfs {
         }*/
     }
 
-    private static void doBfs(Point start, Point[] hall) {
+    private static int[] doBfs(Point start, Point[] hall) {
         TownHallBfs q = new TownHallBfs();
-        q.enqueue(start, totalHall);
-
         int dist = 0;
+        q.enqueue(start, dist);
+        int distHall[] = new int[totalHall];
         visited[start.x][start.y] = true;
-
-        while (!q.isEmpty()){
+        int count = 0;
+        while (!q.isEmpty() && count <= totalHall){
             Node data = q.dequeue();
             Point pt = data.point;
 
             for(int i=0; i < totalHall; i++){
                 if(pt.x == hall[i].x && pt.y == hall[i].y){
+                    distHall[i] = data.dist;
+                    count++;
                 }
             }
 
             for(int k =0; k < 4 ; k++){
                 if(isValid(pt.x + xNum[k], pt.y + yNum[k])){
                     Point newPoint = new Point(pt.x + xNum[k], pt.y + yNum[k]);
-                    q.enqueue(newPoint, totalHall);
+                    q.enqueue(newPoint, dist+1);
                     visited[newPoint.x][newPoint.y] = true;
                 }
             }
+
         }
 
+        return distHall;
+    }
 
+    private static int getTotalDistance(int[] distHall){
+        int totalDistance = 0;
+        for(int i =0; i < distHall.length; i++){
+            totalDistance += distHall[i];
+        }
+        return totalDistance;
+    }
+
+    private static int maxValueFromDistance(int[] distHall){
+        int max =0;
+        for(int i=0; i < distHall.length; i++){
+            if(distHall[i]>max){
+                max = distHall[i];
+            }
+        }
+        return max;
     }
 }
