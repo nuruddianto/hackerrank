@@ -1,4 +1,4 @@
-package code;
+package code.srin;
 
 import java.util.*;
 
