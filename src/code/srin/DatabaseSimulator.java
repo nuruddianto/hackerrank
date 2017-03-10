@@ -58,8 +58,9 @@ public class DatabaseSimulator {
         return record;
     }
 
-    private static Data addDataList(Data data, String stringContain) {
-        Data new_data = new Data(mIndexArray, stringContain);
+    private static Data addDataList(Data data, String stringContain, int indexArray) {
+        int index = (indexArray == 0) ? mIndexArray : indexArray;
+        Data new_data = new Data(index, stringContain);
         if (data == null) {
             data = new_data;
             return data;
@@ -86,21 +87,21 @@ public class DatabaseSimulator {
         return count;
     }
 
-    private static Field insert(Field l, String string_contain) {
-        if (l == null) {
+    private static Field insert(Field l, String string_contain, int indexArray) {
+        if (l == null ) {
             l = new Field();
             Data data = null;
-            l.data = addDataList(data, string_contain);
+            l.data = addDataList(data, string_contain, indexArray);
             return l;
         }
 
         int compare = l.data.string_data.compareTo(string_contain);
         if (compare > 0) {
-            l.right = insert(l.right, string_contain);
+            l.right = insert(l.right, string_contain, indexArray);
         } else if (compare < 0) {
-            l.left = insert(l.left, string_contain);
+            l.left = insert(l.left, string_contain, indexArray);
         } else {
-            l.data = addDataList(l.data, string_contain);
+            l.data = addDataList(l.data, string_contain, indexArray);
         }
 
         return l;
@@ -180,13 +181,12 @@ public class DatabaseSimulator {
             totalDeleted = getTotalData(l);
             if(totalDeleted > 1){
                 Data currData = l.data;
-                while (currData != null) {
+                while (currData.next != null) {
                     if(currData.arrayIndex == indexArray){
                         break;
                     }
                     currData = currData.next;
                 }
-                currData = currData.next;
                 l.data = currData;
             }else{
                 if (l.left == null) {
@@ -199,7 +199,7 @@ public class DatabaseSimulator {
 
                 Field tmp = minValue(l.right);
                 l.data = tmp.data;
-                l.right = deleteByIndex(l.right,indexArray, tmp.data.string_data);
+                l.right = deleteByIndex(l.right, tmp.data.arrayIndex, tmp.data.string_data);
             }
 
         }
@@ -236,7 +236,7 @@ public class DatabaseSimulator {
         birthdayField = null;
         emailField = null;
         memoField = null;
-
+        data = null;
         data = new String[50001][5];
         mIndexArray = 1;
         totalDeleted = 0;
@@ -251,11 +251,11 @@ public class DatabaseSimulator {
         String email = email2 != null ?charToString(email2): "";
         String memo = memo2 != null ? charToString(memo2): "";
 
-        nameField = insert(nameField, name);
-        numberField = insert(numberField, number);
-        birthdayField = insert(birthdayField, birthday);
-        emailField = insert(emailField, email);
-        memoField = insert(memoField, memo);
+        nameField = insert(nameField, name, 0);
+        numberField = insert(numberField, number, 0);
+        birthdayField = insert(birthdayField, birthday, 0);
+        emailField = insert(emailField, email, 0);
+        memoField = insert(memoField, memo, 0);
 
 
         data[mIndexArray][0] = name;
@@ -286,6 +286,34 @@ public class DatabaseSimulator {
                 delete(memoField, charToString(str));
                 break;
         }
+
+        while (deleteRecord != null){
+            int indexArrayToDelete = dequeueRecord();
+            for(int i=0; i < 5 ; i++){
+                if(i == field){
+                    continue;
+                }
+                String stringToDelete = data[indexArrayToDelete][i];
+                switch (i){
+                    case 0:
+                        deleteByIndex(nameField, indexArrayToDelete, stringToDelete);
+                        break;
+                    case 1:
+                        deleteByIndex(numberField,indexArrayToDelete, stringToDelete);
+                        break;
+                    case 2:
+                        deleteByIndex(birthdayField,indexArrayToDelete, stringToDelete);
+                        break;
+                    case 3:
+                        deleteByIndex(emailField,indexArrayToDelete, stringToDelete);
+                        break;
+                    case 4:
+                        deleteByIndex(memoField,indexArrayToDelete, stringToDelete);
+                        break;
+                }
+            }
+
+        }
         return totalDeleted;
     }
 
@@ -308,6 +336,7 @@ public class DatabaseSimulator {
                 searchResult = search(memoField, new String(str));
                 break;
         }
+        int totalChangeData =  getTotalData(searchResult);
         if(searchResult != null){
             Data tmp = searchResult.data;
             while (tmp != null){
@@ -317,38 +346,35 @@ public class DatabaseSimulator {
                 switch (changefield) {
                     case 0:
                         deleteByIndex(nameField, indexFieldToChange, stringToDelete);
-                        insert(nameField, charToString(changestr));
+                        insert(nameField, charToString(changestr), indexFieldToChange);
                         break;
                     case 1:
                         deleteByIndex(numberField, indexFieldToChange, stringToDelete);
-                        insert(numberField, charToString(changestr));
+                        insert(numberField, charToString(changestr), indexFieldToChange);
                         break;
                     case 2:
                         deleteByIndex(birthdayField, indexFieldToChange, stringToDelete);
-                        insert(birthdayField, charToString(changestr));
+                        insert(birthdayField, charToString(changestr), indexFieldToChange);
                         break;
                     case 3:
                         deleteByIndex(emailField, indexFieldToChange, stringToDelete);
-                        insert(emailField, charToString(changestr));
+                        insert(emailField, charToString(changestr), indexFieldToChange);
                         break;
                     case 4:
                         deleteByIndex(memoField, indexFieldToChange, stringToDelete);
-                        insert(memoField, charToString(changestr));
+                        insert(memoField, charToString(changestr), indexFieldToChange);
                         break;
                 }
                 tmp = tmp.next;
             }
         }
 
-
-        int totalChangeData =  getTotalData(searchResult);
         return totalChangeData;
     }
 
     private static RESULT Search(int field, char[] str, int returnfield) {
         RESULT result = new RESULT();
         Field searchResult = null;
-
         switch (field) {
             case 0:
                 searchResult = search(nameField, new String(str));
@@ -579,7 +605,7 @@ public class DatabaseSimulator {
             System.out.format("#%d %d%n", tc, Score);
         }
         System.out.format("TotalScore = %d%n", TotalScore);
-//        traverse(numberField);
+        //traverse(numberField);
     }
 }
 
@@ -724,4 +750,23 @@ Test case #4
         4 0 chombsijhkl 1 NULL 0
         4 1 01044601341 3 wxlhsgkwnelj@q.com 1
         4 3 khlrbxbluzcpo@n.com 4 zcdff 1
+        */
+
+
+       /*
+       1
+                13
+                0 200
+                1 757148
+                1 851001
+                1 413357
+                1 971125
+                4 0 kimgysrtpnjzbp 1 01072086371 1
+                4 0 leefgujjze 2 19260414 1
+                4 4 cwjpxrzpsof 2 19260414 1
+                4 1 01086024865 3 NULL 0
+                4 3 jqtwx@e.com 4 ccxzhdzymdjpt 1
+        3 0 jungyyevu 0 abi 1
+        3 0 leefgujjze 0 abi 1
+        4 0 abi 0 abi 2
         */
