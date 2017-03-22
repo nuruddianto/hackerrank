@@ -71,7 +71,7 @@ public class DatabaseSimulator {
             tmp = tmp.next;
         }
         tmp.next = new_data;
-        return tmp;
+        return data;
     }
 
     private static int getTotalData(Field l) {
@@ -102,6 +102,7 @@ public class DatabaseSimulator {
             l.left = insert(l.left, string_contain, indexArray);
         } else {
             l.data = addDataList(l.data, string_contain, indexArray);
+            return l;
         }
 
         return l;
@@ -139,17 +140,22 @@ public class DatabaseSimulator {
             return null;
         }
 
+        if(stringData.compareTo("jungjudqsyvdrw") == 0 ){
+            String s= "";
+        }
         int compare = l.data.string_data.compareTo(stringData);
         if (compare > 0) {
             l.right = delete(l.right, stringData);
         } else if (compare < 0) {
             l.left = delete(l.left, stringData);
         } else {
-            totalDeleted = getTotalData(l);
-            Data tmpData = l.data;
-            while (tmpData != null) {
-                enqueueDeleteRecord(tmpData.arrayIndex);
-                tmpData = tmpData.next;
+            if(tmpDeleted == 0){
+                tmpDeleted = getTotalData(l);
+                Data tmpData = l.data;
+                while (tmpData != null) {
+                    enqueueDeleteRecord(tmpData.arrayIndex);
+                    tmpData = tmpData.next;
+                }
             }
 
             if (l.left == null) {
@@ -181,13 +187,16 @@ public class DatabaseSimulator {
             totalDeleted = getTotalData(l);
             if(totalDeleted > 1){
                 Data currData = l.data;
-                while (currData.next != null) {
-                    if(currData.arrayIndex == indexArray){
-                        break;
-                    }
+                Data prevData = null;
+                while (currData != null && indexArray != currData.arrayIndex) {
+                    prevData = currData;
                     currData = currData.next;
                 }
-                l.data = currData;
+                if(prevData == null){
+                    l.data = currData.next;
+                }else{
+                    prevData.next = currData.next;
+                }
             }else{
                 if (l.left == null) {
                     l = l.right;
@@ -199,6 +208,7 @@ public class DatabaseSimulator {
 
                 Field tmp = minValue(l.right);
                 l.data = tmp.data;
+                totalDeleted = 0;
                 l.right = deleteByIndex(l.right, tmp.data.arrayIndex, tmp.data.string_data);
             }
 
@@ -228,6 +238,7 @@ public class DatabaseSimulator {
     private static int mIndexArray;
     private static DeleteRecord deleteRecord;
     private static int totalDeleted;
+    private static int tmpDeleted;
 
 
     private static void InitDB() {
@@ -240,6 +251,7 @@ public class DatabaseSimulator {
         data = new String[50001][5];
         mIndexArray = 1;
         totalDeleted = 0;
+        tmpDeleted = 0;
         deleteRecord = null;
         return;
     }
@@ -269,6 +281,7 @@ public class DatabaseSimulator {
 
     private static int Delete(int field, char[] str) {
         totalDeleted = 0;
+        tmpDeleted = 0;
         switch (field){
             case 0:
                 delete(nameField, charToString(str));
@@ -312,13 +325,14 @@ public class DatabaseSimulator {
                         break;
                 }
             }
-
         }
-        return totalDeleted;
+        return tmpDeleted;
     }
 
     private static int Change(int field, char[] str, int changefield, char[] changestr) {
         Field searchResult = null;
+        totalDeleted = 0;
+        tmpDeleted = 0;
         switch (field) {
             case 0:
                 searchResult = search(nameField, new String(str));
@@ -342,6 +356,7 @@ public class DatabaseSimulator {
             while (tmp != null){
                 int indexFieldToChange = tmp.arrayIndex;
                 String stringToDelete = data[indexFieldToChange][changefield];
+
                 data[indexFieldToChange][changefield] = charToString(changestr);
                 switch (changefield) {
                     case 0:
@@ -422,33 +437,39 @@ public class DatabaseSimulator {
 
     static Scanner sc = new Scanner(System.in);
 
-    static int[] dummy = new int[100];
+    static int [] dummy = new int[100];
     static int Score, ScoreIdx;
-    static char[] name = new char[20], number = new char[20], birthday = new char[20], email = new char[20], memo = new char[20];
+    static char[] name = new char[20], number= new char[20], birthday = new char[20], email = new char[20], memo = new char[20];
 
-    static char[][] lastname = {"kim".toCharArray(), "lee".toCharArray(), "park".toCharArray(), "choi".toCharArray(), "jung".toCharArray(), "kang".toCharArray(), "cho".toCharArray(), "oh".toCharArray(), "jang".toCharArray(), "lim".toCharArray()};
-    static int[] lastname_length = {3, 3, 4, 4, 4, 4, 3, 2, 4, 3};
+    static char[][] lastname = { "kim".toCharArray(), "lee".toCharArray(), "park".toCharArray(), "choi".toCharArray(), "jung".toCharArray(), "kang".toCharArray(), "cho".toCharArray(), "oh".toCharArray(), "jang".toCharArray(), "lim".toCharArray() };
+    static int[] lastname_length = { 3, 3, 4, 4, 4, 4, 3, 2, 4, 3 };
 
-    public static class RESULT {
+    public static class RESULT
+    {
         public int count;
         public char[] str = new char[20];
-    }
-
-    ;
+    };
 
     static int mSeed;
-
-    static int mrand(int num) {
+    static int mrand(int num)
+    {
         mSeed = mSeed * 1103515245 + 37209;
         if (mSeed < 0) mSeed *= -1;
         return ((mSeed >> 8) % num);
     }
 
-    static void make_field(int seed) {
+    static void make_field(int seed)
+    {
+        name = new char[20];
+        number= new char[20];
+        birthday = new char[20];
+        email = new char[20];
+        memo = new char[20];
+
         int name_length, email_length, memo_length;
         int idx, num;
 
-        mSeed = (int) seed;
+        mSeed = (int)seed;
 
         name_length = 6 + mrand(10);
         email_length = 10 + mrand(10);
@@ -458,15 +479,15 @@ public class DatabaseSimulator {
         int zero = 48;
         num = mrand(10);
         for (idx = 0; idx < lastname_length[num]; idx++) name[idx] = lastname[num][idx];
-        for (; idx < name_length; idx++) name[idx] = (char) (a + mrand(26));
+        for (; idx < name_length; idx++) name[idx] = (char)(a + mrand(26));
         name[idx] = 0;
 
-        for (idx = 0; idx < memo_length; idx++) memo[idx] = (char) (a + mrand(26));
+        for (idx = 0; idx < memo_length; idx++) memo[idx] = (char)(a + mrand(26));
         memo[idx] = 0;
 
-        for (idx = 0; idx < email_length - 6; idx++) email[idx] = (char) (a + mrand(26));
+        for (idx = 0; idx < email_length - 6; idx++) email[idx] = (char)(a + mrand(26));
         email[idx++] = '@';
-        email[idx++] = (char) (a + mrand(26));
+        email[idx++] = (char)(a + mrand(26));
         email[idx++] = '.';
         email[idx++] = 'c';
         email[idx++] = 'o';
@@ -477,7 +498,7 @@ public class DatabaseSimulator {
         number[idx++] = '0';
         number[idx++] = '1';
         number[idx++] = '0';
-        for (; idx < 11; idx++) number[idx] = (char) (zero + mrand(10));
+        for (; idx < 11; idx++) number[idx] = (char)(zero + mrand(10));
         number[idx] = 0;
 
         idx = 0;
@@ -493,15 +514,20 @@ public class DatabaseSimulator {
         birthday[idx++] = (char) ('0' + num / 10);
         birthday[idx++] = (char) ('0' + num % 10);
         birthday[idx] = 0;
+
+        // debug!
+        //System.out.format("%s %s %s %s %s\n", new String(name), new String(number), new String(birthday), new String(email), new String(memo));
     }
 
-    static void cmd_init() {
+    static void cmd_init()
+    {
         ScoreIdx = sc.nextInt();
 
         InitDB();
     }
 
-    static void cmd_add() {
+    static void cmd_add()
+    {
         int seed;
         seed = sc.nextInt();
 
@@ -510,32 +536,32 @@ public class DatabaseSimulator {
         Add(name, number, birthday, email, memo);
     }
 
-    static void cmd_delete() {
+    static void cmd_delete()
+    {
         int field, check, result;
         char[] str = new char[20];
-        field = sc.nextInt();
-        str = sc.next().toCharArray();
-        check = sc.nextInt();
+        field  = sc.nextInt();
+        str  = sc.next().toCharArray();
+        check  = sc.nextInt();
 
         result = Delete(field, str);
         if (result != check) {
-            System.out.println("Fail to delete :" + new String(str) + " at field :" + field + " result :" + result + " !=" + check);
             Score -= ScoreIdx;
         }
     }
 
-    static void cmd_change() {
+    static void cmd_change()
+    {
         int field, changefield, check, result;
         char[] str = new char[20], changestr = new char[20];
-        field = sc.nextInt();
-        str = sc.next().toCharArray();
-        changefield = sc.nextInt();
-        changestr = sc.next().toCharArray();
-        check = sc.nextInt();
+        field  = sc.nextInt();
+        str  = sc.next().toCharArray();
+        changefield  = sc.nextInt();
+        changestr  = sc.next().toCharArray();
+        check  = sc.nextInt();
 
         result = Change(field, str, changefield, changestr);
         if (result != check) {
-            System.out.println("Fail to change :" + new String(str) + " at field :" + field + " Result check :" + result + "!=" + check);
             Score -= ScoreIdx;
         }
     }
@@ -551,49 +577,46 @@ public class DatabaseSimulator {
         RESULT result = Search(field, str, returnfield);
 
         if (result.count != check || (result.count == 1 && (new String(checkstr).compareTo(new String(result.str)) != 0))) {
-            System.out.println("Fail to search :" + new String(str) + " at field :" + field + " result :" + result.count + " !=" + check + ":Your string is"+ new String(result.str));
             Score -= ScoreIdx;
         }
     }
 
-    static void run() {
+
+    static void run()
+    {
         int N;
         N = sc.nextInt();
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < N; i++)
+        {
             int cmd;
             cmd = sc.nextInt();
-            switch (cmd) {
-                case CMD_INIT:
-                    cmd_init();
-                    break;
-                case CMD_ADD:
-                    cmd_add();
-                    break;
-                case CMD_DELETE:
-                    cmd_delete();
-                    break;
-                case CMD_CHANGE:
-                    cmd_change();
-                    break;
-                case CMD_SEARCH:
-                    cmd_search();
-                    break;
-                default:
-                    break;
+            switch (cmd)
+            {
+                case CMD_INIT:   cmd_init();   break;
+                case CMD_ADD:    cmd_add();    break;
+                case CMD_DELETE: cmd_delete(); break;
+                case CMD_CHANGE: cmd_change(); break;
+                case CMD_SEARCH: cmd_search(); break;
+                default: break;
             }
         }
     }
 
-    static void init() {
+    static void init()
+    {
         Score = 1000;
         ScoreIdx = 1;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
+
         int T;
         T = sc.nextInt();
+
         int TotalScore = 0;
-        for (int tc = 1; tc <= T; tc++) {
+        for (int tc = 1; tc <= T; tc++)
+        {
             init();
 
             run();
@@ -605,8 +628,9 @@ public class DatabaseSimulator {
             System.out.format("#%d %d%n", tc, Score);
         }
         System.out.format("TotalScore = %d%n", TotalScore);
-        //traverse(numberField);
     }
+
+
 }
 
 //    public static void main(String[] args){
