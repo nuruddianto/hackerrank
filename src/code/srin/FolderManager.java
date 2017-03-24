@@ -6,7 +6,264 @@ package code.srin;
 
 import java.util.Scanner;
 
-class Solution {
+public class FolderManager {
+
+    private class File {
+        int id;
+        int pid;
+        File parent;
+        Child child;
+        int totalFileChild;
+        int totalSize;
+        int size;
+        int infectedSize;
+        int totalFileChildFromRoot;
+
+        public File(int id, int pid, int size) {
+            this.id = id;
+            this.pid = pid;
+            this.size = size;
+            totalFileChild = 0;
+        }
+
+        public void setInfectedSize(int infectedSize) {
+            this.infectedSize = infectedSize;
+        }
+
+        public int getFileSize(){
+            return totalSize+infectedSize+size;
+        }
+    }
+
+    private class Child {
+        Child next;
+        Child previous;
+        File file;
+
+        public Child(File file) {
+            this.file = file;
+        }
+    }
+
+    private class Bst {
+        Bst right;
+        Bst left;
+        File file;
+
+        public Bst(File file) {
+            this.file = file;
+        }
+    }
+
+    private Bst bst;
+
+    private Bst insertBst(Bst bst, File file) {
+        if (bst == null) {
+            bst = new Bst(file);
+            return bst;
+        }
+
+        if (file.id > bst.file.id) {
+            bst.right = insertBst(bst.right, file);
+        } else {
+            bst.left = insertBst(bst.left, file);
+        }
+
+        return bst;
+    }
+
+    private File searchBst(Bst bst, int id) {
+        if (bst == null) {
+            return null;
+        }
+
+        if (bst.file.id < id) {
+            return searchBst(bst.right, id);
+        } else if (bst.file.id > id) {
+            return searchBst(bst.left, id);
+        }
+
+        return bst.file;
+    }
+
+    private Child addChildList(Child head, File newFile) {
+        Child newChild = new Child(newFile);
+        newChild.previous = null;
+
+        newChild.next = head;
+        if (head != null) {
+            head.previous = newChild;
+        }
+        head = newChild;
+        return head;
+    }
+
+    private void removeChildFromList(Child child, File fileToDelete) {
+        if (child == null || fileToDelete == null) {
+            return;
+        }
+
+        Child tmp = child;
+        File parentTmp = fileToDelete.parent;
+        int sizeToRemove = fileToDelete.totalSize == 0 ? fileToDelete.size : fileToDelete.totalSize;
+        while(parentTmp.id != 10000){
+        	parentTmp.totalSize -= sizeToRemove;
+        	parentTmp.totalFileChildFromRoot -= 1;
+        	parentTmp = parentTmp.parent;
+        }
+        
+        parentTmp.totalSize -= sizeToRemove;
+    	parentTmp.totalFileChildFromRoot -= 1;
+    	
+    	if(fileToDelete.size != 0){
+    		fileToDelete.parent.totalFileChild -= 1;
+    	}
+    	
+
+        while (tmp != null && tmp.file.id != fileToDelete.id) {
+            tmp = tmp.next;
+        }
+        
+        if(tmp.previous == null && tmp.next == null){
+        	tmp = null;
+        	return;
+        }
+        if(tmp.previous == null){
+        	tmp = tmp.next;
+        	tmp.previous = null;
+        }else if(tmp.next == null){
+        	tmp = tmp.previous;
+        	tmp.next = null;
+        }else{
+        	tmp.next.previous = tmp.previous;
+        	tmp.previous.next = tmp.next;
+        }
+    }
+
+    public void init() {
+    	File parent = new File(10000, 0, 0);
+        bst = insertBst(bst, parent);
+    }
+
+    /*
+    File or directory corresponding to id is newling added to the pid directory.
+    The id value is not overlapping with other id.
+
+    Parameters
+    id  : id of file or directory that is newly added.
+    pid : pid of parent directory.
+    fileSize : Size of the file that is newly added (greater than 0). If 0 then is a directory.
+
+    Returns
+    After file or directory is added, return the size of the corresponding pid
+            (return the total size of pid's subordinate directories and files)
+    */
+    public int add(int id, int pid, int fileSize) {
+        File newFile = new File(id, pid, fileSize);
+        bst = insertBst(bst, newFile);
+
+        File parent = searchBst(bst, pid);
+        if(newFile.size != 0){
+            File parentTmp = parent;
+            while (parentTmp.id != 10000){
+                parentTmp.totalFileChildFromRoot += 1;
+                parentTmp.totalSize += fileSize;
+                parentTmp = parentTmp.parent;
+            }
+            parentTmp.totalSize += fileSize;
+            parentTmp.totalFileChildFromRoot += 1;
+            parent.totalFileChild += 1;
+        }
+
+        newFile.parent = parent;
+
+        parent.child = addChildList(parent.child, newFile);
+        int totalSize = parent.totalSize;
+        parent.totalSize = totalSize;
+        return totalSize;
+    }
+
+    /*
+    File or directory corresponding to id is moved below the pid directory.
+    In the move command, a pid that is the subordinate directory of the id will not be given.
+
+    Parameters
+    id  : id of file or directory that is to be moved.
+    pid : id of becoming parent directory.
+
+    Returns
+    After file or directory is moved, return the size of the corresponding pid
+            (return the total size of pid's subordinate directories and files)
+    */
+    public int move(int id, int pid) {
+        File fileToMove = searchBst(bst, id);
+        File parent = searchBst(bst, pid);
+        removeChildFromList(fileToMove.parent.child, fileToMove);
+        int fileSize = (fileToMove.totalSize == 0 ? fileToMove.size : fileToMove.totalSize);
+        return add(id, parent.id, fileSize);
+    }
+
+    public int infect(int id) {
+        File fileToInfect = searchBst(bst, id);
+
+        int totalFileToInfect = fileToInfect.parent.totalFileChild;
+        int totalFileFromRoot = fileToInfect.parent.totalFileChildFromRoot;
+        
+        int infectedSize = fileToInfect.parent.getFileSize() / totalFileToInfect / totalFileFromRoot;
+        
+        /*add infected size to parent*/
+        File tmpParent = fileToInfect.parent;
+        int infextedSizeForParent = fileToInfect.totalFileChildFromRoot == 0 ? infectedSize :fileToInfect.totalFileChildFromRoot * infectedSize;
+        while(tmpParent != null){
+        	tmpParent.infectedSize += infextedSizeForParent;
+        	tmpParent = tmpParent.parent;
+        }
+        
+        /*add infected size to child*/
+        traverseFile(fileToInfect, infectedSize);
+        
+        return fileToInfect.getFileSize();
+    }
+    
+    private void traverseFile(File fileToInfected, int infectedSize){
+    	if(fileToInfected != null){
+    		//infected for directory
+    		if(fileToInfected.totalFileChildFromRoot != 0){
+    			int totalInfectedSize = fileToInfected.totalFileChildFromRoot * infectedSize;
+    			fileToInfected.setInfectedSize(totalInfectedSize);
+    			
+    			/*loop child*/
+    			Child tmpChild = fileToInfected.child;
+    			while(tmpChild.next != null){
+    				traverseFile(tmpChild.next.file, infectedSize);
+    				tmpChild = tmpChild.next;
+    			}   			
+    		}else{
+    			fileToInfected.setInfectedSize(infectedSize);
+    		}
+    	}
+    }
+
+    public int recover(int id) {
+    	File fileToRecover = searchBst(bst, id);
+    	int recoverFileSize = fileToRecover.infectedSize;
+    	
+    	File tmpFileParent = fileToRecover;
+    	while(tmpFileParent != null){
+    		tmpFileParent.infectedSize -= recoverFileSize;
+    		tmpFileParent = tmpFileParent.parent;
+    	}
+    	
+    	traverseFile(fileToRecover, 0);
+        return fileToRecover.getFileSize();
+    }
+
+    public int remove(int id) {
+    	File fileToRemove = searchBst(bst, id);
+    	removeChildFromList(fileToRemove.parent.child, fileToRemove);
+        return fileToRemove.getFileSize();
+    }
+    
     private static final int CMD_ADD = 1;
     private static final int CMD_MOVE = 2;
     private static final int CMD_INFECT = 3;
@@ -56,12 +313,16 @@ class Solution {
             }
 
             int checkSum = Integer.parseInt(sc.next());
-            if(ret == checkSum) score++;
+            if(ret == checkSum){ 
+            	score++;
+            }else{
+            	System.out.println("failed in command :" + cmd);
+            }
         }
         return score;
     }
 
-    public static void main(String arg[]) throws Exception {
+    public static void main(String arg[]) {
         //System.setIn(new java.io.FileInputStream("res/sample_input.txt"));
         sc = new Scanner(System.in);
 
@@ -79,228 +340,37 @@ class Solution {
     }
 }
 
-public class FolderManager {
+/*
+Sample Test Case
+1
+15
+1 10001 10000 0 0
+1 10002 10000 300 300
+1 10003 10000 0 300
+1 20001 10001 200 200
+1 20002 10001 100 300
+1 30001 10003 0 0
+1 40001 30001 240 240
+2 20002 30001 340
+2 10001 10003 540
+3 10002 510
+3 10003 1326
+4 10001 200
+4 20002 100
+5 10002 510
+5 10001 200
 
-    private class File {
-        int id;
-        int pid;
-        File parent;
-        Child child;
-        int totalFileChild;
-        int totalSize;
-        int size;
-        int infectedSize;
-        int totalFileChildFromRoot;
+Only add Test Case
+1
+9
+1 10001 10000 0 0
+1 10002 10000 300 300
+1 10003 10000 0 300
+1 20001 10001 200 200
+1 20002 10001 100 300
+1 30001 10003 0 0
+1 40001 30001 240 240
+2 20002 30001 340
+2 10001 10003 540
+*/
 
-        public File(int id, int pid, int size) {
-            this.id = id;
-            this.pid = pid;
-            this.size = size;
-            totalFileChild = 0;
-        }
-
-        public void setInfectedSize(int infectedSize) {
-            this.infectedSize = infectedSize;
-        }
-
-        public int getFileSize(){
-            return totalSize+infectedSize;
-        }
-    }
-
-    private class Child {
-        Child next;
-        Child previous;
-        File file;
-
-        public Child(File file) {
-            this.file = file;
-        }
-    }
-
-    private class Bst {
-        Bst right;
-        Bst left;
-        File file;
-
-        public Bst(File file) {
-            this.file = file;
-        }
-    }
-
-    Bst bst;
-
-    private Bst insertBst(Bst bst, File file) {
-        if (bst == null) {
-            bst = new Bst(file);
-            return bst;
-        }
-
-        if (file.id > bst.file.id) {
-            bst.right = insertBst(bst.right, file);
-        } else {
-            bst.left = insertBst(bst.left, file);
-        }
-
-        return bst;
-    }
-
-    private File searchBst(Bst bst, int id) {
-        if (bst == null) {
-            return null;
-        }
-
-        if (bst.file.id < id) {
-            return searchBst(bst.right, id);
-        } else if (bst.file.id > id) {
-            return searchBst(bst.left, id);
-        }
-
-        return bst.file;
-    }
-
-    private Child addChildList(Child head, File newFile) {
-        Child newChild = new Child(newFile);
-        newChild.previous = null;
-
-        newChild.next = head;
-        if (head != null) {
-            head.previous = newChild;
-        }
-        head = newChild;
-        return head;
-    }
-
-    private void removeChildFromList(Child child, File fileToDelete) {
-        if (child == null || fileToDelete == null) {
-            return;
-        }
-
-        Child tmpLeft = child;
-        Child tmpRight = child;
-
-        Child childToDelete = null;
-        while (tmpLeft != null) {
-            if (tmpLeft.file.id == fileToDelete.id) {
-                childToDelete = tmpLeft;
-                break;
-            }
-            tmpLeft = tmpLeft.previous;
-        }
-
-        if(childToDelete != null){
-            while (tmpRight != null) {
-                if (tmpRight.file.id == fileToDelete.id) {
-                    childToDelete = tmpRight;
-                    break;
-                }
-                tmpRight = tmpRight.next;
-            }
-        }
-
-        if (childToDelete.previous != null) {
-            childToDelete.previous.next = childToDelete.next;
-        }
-
-        if (childToDelete.next != null) {
-            childToDelete.next.previous = child.previous;
-        }
-
-        childToDelete = null;
-    }
-
-    public void init() {
-        bst = null;
-    }
-
-    /*
-    File or directory corresponding to id is newling added to the pid directory.
-    The id value is not overlapping with other id.
-
-    Parameters
-    id  : id of file or directory that is newly added.
-    pid : pid of parent directory.
-    fileSize : Size of the file that is newly added (greater than 0). If 0 then is a directory.
-
-    Returns
-    After file or directory is added, return the size of the corresponding pid
-            (return the total size of pid's subordinate directories and files)
-    */
-    public int add(int id, int pid, int fileSize) {
-        File newFile = new File(id, pid, fileSize);
-        bst = insertBst(bst, newFile);
-
-        File parent = searchBst(bst, pid);
-        if(parent == null){
-            parent = new File(0,0,0);
-            newFile.parent = parent;
-            return fileSize;
-        }
-
-        if(newFile.size != 0){
-            File parentTmp = parent;
-            while (parentTmp.id != 0){
-                parentTmp.totalFileChildFromRoot += 1;
-                parentTmp = parent.parent;
-            }
-            parent.totalFileChild += 1;
-        }
-
-        newFile.parent = parent;
-
-
-        addChildList(parent.child, newFile);
-        int totalSize = parent.totalSize + fileSize;
-        parent.totalSize = totalSize;
-        return totalSize;
-    }
-
-    /*
-    File or directory corresponding to id is moved below the pid directory.
-    In the move command, a pid that is the subordinate directory of the id will not be given.
-
-    Parameters
-    id  : id of file or directory that is to be moved.
-    pid : id of becoming parent directory.
-
-    Returns
-    After file or directory is moved, return the size of the corresponding pid
-            (return the total size of pid's subordinate directories and files)
-    */
-    public int move(int id, int pid) {
-        File fileToMove = searchBst(bst, id);
-        File parent = searchBst(bst, pid);
-
-        File tmp = fileToMove;
-        removeChildFromList(fileToMove.parent.child, fileToMove);
-        addChildList(parent.child, tmp);
-
-        return add(id, parent.id, fileToMove.totalSize);
-    }
-
-    public int infect(int id) {
-        File fileToInfect = searchBst(bst, id);
-        File tmp = fileToInfect;
-
-        int totalFileToInfect = fileToInfect.parent.totalFileChild;
-        int infectedSize = fileToInfect.totalSize / totalFileToInfect / fileToInfect.parent.totalFileChildFromRoot;
-
-        Child tmpInfected = fileToInfect.parent.child;
-        while(tmpInfected != null){
-            if(tmp.size != 0){
-                tmp.setInfectedSize(infectedSize);
-            }
-            tmpInfected = tmpInfected.next;
-        }
-
-        return fileToInfect.getFileSize();
-    }
-
-    public int recover(int id) {
-        return -1;
-    }
-
-    public int remove(int id) {
-        return -1;
-    }
-}
