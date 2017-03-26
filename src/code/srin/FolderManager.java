@@ -198,10 +198,68 @@ public class FolderManager {
     public int move(int id, int pid) {
         File fileToMove = searchBst(bst, id);
         File parent = searchBst(bst, pid);
-        removeChildFromList(fileToMove.parent.child, fileToMove);
-        int fileSize = (fileToMove.totalSize == 0 ? fileToMove.size : fileToMove.totalSize);
-        return add(id, parent.id, fileSize);
+        int realSizeToMove = fileToMove.totalSize == 0 ? fileToMove.size : fileToMove.totalSize;
+        int realTotalFileChild = fileToMove.totalFileChild == 0 ? 1 : fileToMove.totalFileChild ;
+        int realTotalFileChildFromRoot = fileToMove.totalFileChildFromRoot == 0 ? 1 : fileToMove.totalFileChildFromRoot;
+
+        File parentFile = fileToMove.parent;
+        fileToMove.parent.child = removeObjectForMove(fileToMove.parent.child, fileToMove);
+        while(parentFile != null){
+            //remove all type size, totalChild && totalChildFromRRoot from parent
+            parentFile.totalFileChild -= realTotalFileChild;
+            parentFile.totalFileChildFromRoot -= realTotalFileChildFromRoot;
+            parentFile.totalSize -= realSizeToMove;
+            parentFile.infectedSize -= fileToMove.infectedSize;
+            parentFile = parentFile.parent;
+        }
+
+        addObjectForMOve(fileToMove, parent);
+        fileToMove.parent = parent;
+
+        File newParentFile = parent;
+
+        while(newParentFile != null){
+            //add all type size, totalChild && totalChildFromRoot to new parent
+            newParentFile.totalFileChild += realTotalFileChild;
+            newParentFile.totalFileChildFromRoot += realTotalFileChildFromRoot;
+            newParentFile.totalSize += realSizeToMove;
+            newParentFile.infectedSize += fileToMove.infectedSize;
+            newParentFile = newParentFile.parent;
+        }
+
+        return parent.getFileSize();
     }
+
+    public void addObjectForMOve(File fileToMove, File parent) {
+        fileToMove.parent = parent;
+        parent.child = addChildList(parent.child, fileToMove);
+    }
+
+    private Child removeObjectForMove(Child child, File fileToDelete) {
+        if (child == null || fileToDelete == null) {
+            return null;
+        }
+
+        Child tmp = child;
+
+        while (tmp != null && tmp.file.id != fileToDelete.id) {
+            tmp = tmp.next;
+        }
+
+
+        if(tmp.previous == null){
+            child = tmp.next;
+            child.previous = null;
+        }else if(tmp.next == null){
+            tmp = tmp.previous;
+            tmp.next = null;
+        }else{
+            tmp.next.previous = tmp.previous;
+            tmp.previous.next = tmp.next;
+        }
+        return child;
+    }
+
 
     public int infect(int id) {
         File fileToInfect = searchBst(bst, id);
