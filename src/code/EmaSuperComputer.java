@@ -6,7 +6,7 @@ import java.util.Scanner;
  * Created by SRIN on 4/18/2017.
  */
 public class EmaSuperComputer {
-    private static class PlusSign{
+    private static class PlusSign {
         PlusSign next;
         int row;
         int col;
@@ -23,164 +23,162 @@ public class EmaSuperComputer {
     private static int row;
     private static int col;
     private static PlusSign head;
+    private static PlusSign plusOne;
+    private static PlusSign plusTwo;
+    private static int maxValue;
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         row = sc.nextInt();
         col = sc.nextInt();
 
-        map = new char[row+1][col+1];
+        map = new char[row + 1][col + 1];
 
-        for(int j = 1; j <= row; j++){
-            String  s = sc.next();
-            for(int i = 0; i < col; i++){
-                int k = i+1;
+        for (int j = 1; j <= row; j++) {
+            String s = sc.next();
+            for (int i = 0; i < col; i++) {
+                int k = i + 1;
                 map[j][k] = s.charAt(i);
             }
         }
 
-        for(int j = 1; j <= row; j++){
-            for(int i = 1; i <= col; i++){
-                if(map[j][i] - 'G' == 0){
-                    findPlusSign(j, i);
+        int maxWidth = row > col ? col / 2 : row / 2;
+
+        for (int l = maxWidth; l > 0; l--) {
+            for (int j = 1; j <= row; j++) {
+                for (int i = 1; i <= col; i++) {
+                    if (map[j][i] - 'G' == 0) {
+                        findPlusSign(j, i, l);
+                    }
                 }
             }
         }
 
-        int max1 = 0;
-        int max2 = 0;
         PlusSign tmp = head;
-        while (tmp != null){
-            int currWidth = tmp.width;
-            if(max1 == 0){
-                max1 = currWidth;
-            }else if(max2 == 0){
-                max2 = currWidth;
-            }else if(currWidth > max1){
-                max2 = max1;
-                max1 = currWidth;
+        if(tmp == null){
+            System.out.println(1);
+        }else{
+            while(tmp != null){
+                int currMax = finMax(tmp);
+                if(currMax > maxValue){
+                    maxValue = currMax;
+                }
+                tmp = tmp.next;
             }
 
-            if(max1 < max2){
-                int t = max1;
-                max1 = max2;
-                max2 = t;
-            }
-            tmp = tmp.next;
+            System.out.println(maxValue);
         }
 
-        int result = (max1*4 +1) * (max2*4+1);
 
-        System.out.println(result);
     }
 
-    private static void findPlusSign(int row, int col){
-        if(row == 2 && col == 5){
+    private static void findPlusSign(int row, int col, int width) {
+        if (row == 2 && col == 5) {
             String s = "";
         }
 
-        //find left
-        int width = -1;
-        int tmpCol = col;
-        while (isValid(row,tmpCol)){
-            tmpCol--;
-            width++;
+        if (!isValid(row + width, col ) || !isValid(row - width, col ) || !isValid(row , col - width) || !isValid(row , col + width) ) {
+            return;
         }
 
-        if(width == 0){
+        //find left
+        int outerLeft = width;
+        while (isValid(row, col - outerLeft) && outerLeft != 0) {
+            outerLeft--;
+        }
+
+        if (outerLeft > 0) {
             return;
         }
 
         //find right
-        int i = -1;
-        tmpCol = col;
-        while (isValid(row, tmpCol) && i != width){
-            i++;
-            tmpCol++;
+        int outerRight = width;
+        while (isValid(row, col + outerRight) && outerRight != 0) {
+            outerRight--;
         }
 
-        if(i == 0){
+        if (outerRight > 0) {
             return;
-        }
-
-        if( i < width ){
-            width = i;
         }
 
         //find up
-        int u = -1;
-        int tmpRow = row;
-        while (isValid(tmpRow, col) &&  u != width){
-            tmpRow--;
-            u++;
+        int outerUp = width;
+        while (isValid(row - outerUp, col) && outerUp != 0) {
+            outerUp--;
         }
 
-        if(u == 0){
+        if (outerUp > 0) {
             return;
         }
 
-        if( u < width ){
-            width = u;
-        }
 
         //find bottom
-        int b=-1;
-        tmpRow = row;
-        while (isValid(tmpRow, col) &&  b != width){
-            tmpRow++;
-            b++;
+        int outerBottom = width;
+        while (isValid(row + outerBottom, col) && outerBottom != 0) {
+            outerBottom--;
         }
 
-        if(b == 0){
+        if (outerBottom > 0) {
             return;
         }
 
-        if(b < width){
-            width = b;
-        }
+
         addPlusSign(row, col, width);
-
     }
 
-    private static boolean isValid(int j, int i){
-        return j >= 1 && j <=row && i>=1 && i <= col && map[j][i] == 'G';
+    private static int finMax(PlusSign head){
+
+        PlusSign tmp = head;
+        plusOne = null;
+        plusTwo = null;
+        while (tmp != null) {
+            if (plusOne == null) {
+                plusOne = tmp;
+            } else if (plusTwo == null && !isOverlap(plusOne, tmp)) {
+                plusTwo = tmp;
+            }
+
+            tmp = tmp.next;
+        }
+
+        if(plusTwo == null){
+            plusTwo = new PlusSign(0,0, 0);
+        }
+
+        return (plusOne.width * 4 + 1) * (plusTwo.width * 4 + 1);
     }
 
-    private static void addPlusSign(int row, int col, int width){
+    private static boolean isValid(int j, int i) {
+        return j >= 1 && j <= row && i >= 1 && i <= col && map[j][i] == 'G';
+    }
+
+    private static void addPlusSign(int row, int col, int width) {
         PlusSign newData = new PlusSign(row, col, width);
-        if(head == null){
+        if (head == null) {
             head = newData;
             return;
         }
 
         PlusSign tmp = head;
-
-        while (tmp.next != null ){
+        PlusSign prev = null;
+        while (tmp.next != null) {
             tmp = tmp.next;
         }
-
-        if(isOverlap(tmp, newData)){
-            if(tmp.width < newData.width){
-                tmp = newData;
-            }
-        }else{
-            tmp.next = newData;
-        }
-
+        tmp.next = newData;
     }
 
-    private static PlusSign pop(){
+    private static PlusSign pop() {
         PlusSign tmp = head;
-        if(tmp == null){
-            return  null;
+        if (tmp == null) {
+            return null;
         }
 
         head = head.next;
         return tmp;
     }
 
-    private static boolean isOverlap(PlusSign oldSign, PlusSign newSign){
-        boolean isVisited[][] = new boolean[row+1][col+1];
+    private static boolean isOverlap(PlusSign oldSign, PlusSign newSign) {
+        boolean isVisited[][] = new boolean[row + 1][col + 1];
 
         int oldRow = oldSign.row;
         int oldCol = oldSign.col;
@@ -191,15 +189,15 @@ public class EmaSuperComputer {
         int newWidth = newSign.width;
 
 
-        for(int i = 0 ; i <= oldWidth; i++){
-            isVisited[oldRow+i][oldCol] = true;
-            isVisited[oldRow-i][oldCol] = true;
-            isVisited[oldRow][oldCol+i] = true;
-            isVisited[oldRow][oldCol-i] = true;
+        for (int i = 0; i <= oldWidth; i++) {
+            isVisited[oldRow + i][oldCol] = true;
+            isVisited[oldRow - i][oldCol] = true;
+            isVisited[oldRow][oldCol + i] = true;
+            isVisited[oldRow][oldCol - i] = true;
         }
 
-        for(int i = 0 ; i <= newWidth; i++){
-            if(isVisited[newRow+i][newCol] || isVisited[newRow-i][newCol] || isVisited[newRow][newCol+i] || isVisited[newRow][newCol+i]){
+        for (int i = 0; i <= newWidth; i++) {
+            if (isVisited[newRow + i][newCol] || isVisited[newRow - i][newCol] || isVisited[newRow][newCol + i] || isVisited[newRow][newCol - i]) {
                 return true;
             }
         }
