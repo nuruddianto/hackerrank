@@ -1,5 +1,10 @@
 package code;
 
+import com.sun.org.apache.regexp.internal.RE;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Created by Nuruddianto on 4/6/2017.
  */
@@ -11,7 +16,7 @@ public class MyRedBlackTree {
 
         public Node(int value) {
             this.value = value;
-            this.color = "red";
+            this.color = RED;
         }
     }
 
@@ -112,9 +117,10 @@ public class MyRedBlackTree {
     }
 
     private void letsBalancing(Node h) {
-        if(h != null && isDoubleRedProblem(h)){
-            if(isRed(getParent(h)) && isRed(getSibling(getParent(h)))){
+        if(h != null && h != root && isDoubleRedProblem(h)){
+            if( isRed(getSibling(getParent(h)))){
                 recolor(h);
+                letsBalancing(getGrandParent(h));
             }else if(getParent(h) == rightOf(getGrandParent(h))){
                 if(h == leftOf(getParent(h))){
                     rotateRight(h = getParent(h));
@@ -136,51 +142,60 @@ public class MyRedBlackTree {
 
     private void letsBalancingDelete(Node h){
         while (h != root && !isRed(h)){
-            if(h == h.parent.left){
-                Node sibling = h.parent.right;
+            if(h == leftOf(h.parent)){
+                Node sibling = rightOf(h.parent);
+
                 if(isRed(sibling)){
-                    sibling.color = BLACK;
-                    h.parent.color = RED;
+                    setColor(sibling, BLACK);
+                    setColor(h.parent, RED);
                     rotateLeft(h.parent);
                     sibling = rightOf(h.parent);
                 }
 
-                if(!isRed(sibling.left) && !isRed(sibling.right)){
-                    sibling.color = RED;
+                if(!isRed(leftOf(sibling)) && !isRed(rightOf(sibling))){
+                    setColor(sibling, RED);
                     h = h.parent;
                 }else{
-                    if(!isRed(sibling.right)){
-                        sibling.left.color = BLACK;
-                        sibling.color = RED;
+                    if(!isRed(rightOf(sibling))){
+                        setColor(leftOf(sibling), BLACK);
+                        setColor(sibling, RED);
                         rotateRight(sibling);
-                        sibling = h.parent.left;
-                        h = (Node) root;
+                        sibling = rightOf(h.parent);
                     }
+                    setColor(sibling, h.parent.color);
+                    setColor(h.parent, BLACK);
+                    setColor(rightOf(sibling), BLACK);
+                    rotateLeft(h.parent);
+                    h = (Node) root;
                 }
             }else{
-                Node sibling = h.parent.left;
+                Node sibling = leftOf(h.parent);
                 if(isRed(sibling)){
-                    sibling.color = BLACK;
-                    h.parent.color = RED;
+                    setColor(sibling, BLACK);
+                    setColor(h.parent, RED);
                     rotateRight(h.parent);
                     sibling = leftOf(h.parent);
                 }
 
-                if(!isRed(sibling.left) && !isRed(sibling.right)){
-                    sibling.color = RED;
+                if(!isRed( leftOf(sibling)) && !isRed( rightOf(sibling))){
+                    setColor(sibling, RED);
                     h = h.parent;
                 }else{
-                    if(!isRed(h.left)){
-                        sibling.right.color = BLACK;
-                        sibling.color = RED;
+                    if(!isRed(leftOf(h))){
+                        setColor(rightOf(sibling), BLACK);
+                        setColor(sibling, RED);
                         rotateLeft(sibling);
-                        sibling = h.parent.right;
-                        h = (Node) root;
+                        sibling = leftOf(h.parent);
                     }
+                    setColor(sibling, h.parent.color);
+                    setColor(h.parent, BLACK);
+                    setColor(leftOf(sibling), BLACK);
+                    rotateRight(h.parent);
+                    h = (Node) root;
                 }
             }
         }
-        h.color = BLACK;
+        setColor(h, BLACK);
     }
 
     private void removeParentNode(Node n){
@@ -205,8 +220,10 @@ public class MyRedBlackTree {
             oldRight.parent = null;
         } else if (c.parent.left == c) {
             c.parent.left = oldRight;
+            oldRight.parent = c.parent;
         } else {
             c.parent.right = oldRight;
+            oldRight.parent = c.parent;
         }
         oldRight.left = c;
         c.parent = oldRight;
@@ -224,8 +241,10 @@ public class MyRedBlackTree {
             oldLeft.parent = null;
         } else if (c.parent.left == c) {
             c.parent.left = oldLeft;
+            oldLeft.parent = c.parent;
         } else {
             c.parent.right = oldLeft;
+            oldLeft.parent = c.parent;
         }
         oldLeft.right = c;
         c.parent = oldLeft;
@@ -235,6 +254,7 @@ public class MyRedBlackTree {
     private void recolor(Node h) {
         h.parent.color = BLACK;
         getSibling(h.parent).color = BLACK;
+        getGrandParent(h).color = RED;
     }
 
     private boolean isDoubleRedProblem(Node h){
@@ -247,6 +267,11 @@ public class MyRedBlackTree {
 
     private Node getGrandParent(Node h){
         return h.parent == null ? null : h.parent.parent == null ? null : h.parent.parent;
+    }
+
+    private void setColor(Node n, String c) {
+        if (n != null)
+            n.color = c;
     }
 
     private Node getParent(Node h){
@@ -266,15 +291,54 @@ public class MyRedBlackTree {
     }
 
     public static void main(String[] args){
-        MyRedBlackTree m = new MyRedBlackTree();
-        m.insert(10);
-        m.insert(20);
-        m.insert(30);
-        m.insert(15);
-        m.insert(40);
-        m.insert(50);
+        MyRedBlackTree tree = new MyRedBlackTree();
 
-        Node s = m.root;
+        /*Insert Test Case*/
+        tree.insert(20);
+        tree.insert(15);
+        tree.insert(25);
+        tree.insert(10);
+        tree.insert(17);
+        tree.insert(8);
+        tree.insert(9);
+        tree.delete(15);
+        tree.delete(20);
+
+        Node s = tree.root;
         String b = "";
+    }
+
+    @Test
+    public void testCase() {
+        MyRedBlackTree tree = new MyRedBlackTree();
+
+        /*Test Insert*/
+        tree.insert(20);
+        tree.insert(15);
+        tree.insert(25);
+        tree.insert(10); // re color 15 and 25 to black on this insert
+        assertEquals((tree.root).color, tree.BLACK);
+        assertEquals( (tree.search(tree.root, 15)).color, tree.BLACK);
+        assertEquals((tree.search(tree.root, 25)).color, tree.BLACK);
+        tree.insert(17);
+        tree.insert(8);
+        assertEquals((tree.search(tree.root,15)).color, tree.RED);
+        assertEquals((tree.search(tree.root,10)).color, tree.BLACK);
+        assertEquals((tree.search(tree.root,17)).color, tree.BLACK);
+        assertEquals((tree.search(tree.root,8)).color, tree.RED);
+        tree.insert(9); // case 2/3 - rotation right, then left
+        assertEquals((tree.search(tree.root,10)).color, tree.RED);
+        assertEquals((tree.search(tree.root,8)).color, tree.RED);
+        assertEquals( tree.search(tree.root,9).left.value, 8);
+
+        /*Test Delete*/
+        tree.delete(15);
+        assertEquals(tree.search(tree.root,10).left.value, 9);
+        assertEquals(tree.search(tree.root,10).left.color, BLACK);
+        assertEquals(tree.search(tree.root,10).color, RED);
+
+        tree.delete(10);
+        assertEquals(tree.search(tree.root,9).color, tree.RED);
+        assertEquals(tree.search(tree.root,9).left.color, tree.BLACK);
     }
 }
