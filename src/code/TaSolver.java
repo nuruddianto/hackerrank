@@ -38,7 +38,7 @@ public class TaSolver {
         Ta Grant = new Ta("Grant", 2, new ArrayList<>(Arrays.asList(1, 11)));
         Ta Raeanne = new Ta("Raeanne", 2, new ArrayList<>(Arrays.asList(1, 11, 12)));
 
-        Ta Alex = new Ta("Alex", 1, new ArrayList<>(Arrays.asList(4)));
+        Ta Alex = new Ta("Alex", 1, new ArrayList<>(Arrays.asList(7)));
         Ta Erin = new Ta("Erin", 1, new ArrayList<>(Arrays.asList(4)));
 
 
@@ -51,7 +51,7 @@ public class TaSolver {
         mListTa.add(Aashish);
         mListTa.add(Grant);
         mListTa.add(Raeanne);
-        mListTa.add(Alex);
+        mListTa.add(Erin);
 
         int totalSubject = sc.nextInt();
         mVisited = new boolean[mListTa.size()][100];
@@ -80,7 +80,7 @@ public class TaSolver {
             return;
         }
 
-        if (index >= subjects.size() || index < 0) {
+        if (index >= subjects.size()) {
             return;
         }
 
@@ -91,8 +91,8 @@ public class TaSolver {
 
                 mVisited[i][subject] = true;
                 findSubject(index, subjects, listTa, answer);
-
                 mVisited[i][subject] = false;
+
                 answer.add(mListTa.get(i));
                 findSubject(index += 1, subjects, listTa, answer);
             }
@@ -112,6 +112,7 @@ public class TaSolver {
         for (Ta ta: tas){
             System.out.print(ta.getmName()+" ");
         }
+        System.out.println();
     }
 
     public static Queue<Ta> cloneQueue(Queue<Ta> listToClone) {
