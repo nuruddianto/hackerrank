@@ -166,8 +166,7 @@ public class MiniCompiler {
 
         int total = 0;
         int testcase = sc.nextInt();
-        for (int t = 1; t <= testcase; ++t)
-        {
+        for (int t = 1; t <= testcase; ++t) {
             // input
             int[] reg = new int[Constants.HAF_REG];
             for (int r = 0; r < Constants.HAF_REG; ++r)
@@ -213,6 +212,7 @@ class UserSolution {
         cpu.save(1 << 31, currentLine++);
         //process
         parseString(str);
+        processQueue();
         cpu.save(1 << 23 | 21 << 18, currentLine++);
         // TO DO
     }
@@ -223,36 +223,70 @@ class UserSolution {
         for (int i = 0; i < str.length(); i++) {
             if (str.charAt(i) == '+' || str.charAt(i) == '-' || str.charAt(i) == '*') {
                 if (str.charAt(startIndex) == 'R') {
-                    enqueue(new Node(0, stringToInteger(str.substring(startIndex + 1, i - startIndex)), Node.Type.Register, Node.TypeOperator.Addition));
+                    Node node = new Node(0, stringToInteger(str.substring(startIndex + 1, i - startIndex)), Type.Register, TypeOperator.Addition);
+                    enqueue(node);
                 } else {
-                    enqueue(new Node(stringToInteger(str.substring(startIndex, i - startIndex)), 0, Node.Type.Number, Node.TypeOperator.Addition));
+                    Node node = new Node(stringToInteger(str.substring(startIndex, i)), 0, Type.Number, TypeOperator.Addition);
+                    enqueue(node);
                 }
                 startIndex = i + 1;
             }
 
+            Node opNode;
             switch (str.charAt(i)) {
                 case '+':
-                    enqueue(new Node(0, 0, Node.Type.Operator, Node.TypeOperator.Addition));
+                    opNode = new Node(0, 0, Type.Operator, TypeOperator.Addition);
+                    enqueue(opNode);
                     break;
                 case '-':
-                    enqueue(new Node(0, 0, Node.Type.Operator, Node.TypeOperator.Substraction));
+                    opNode = new Node(0, 0, Type.Operator, TypeOperator.Substraction);
+                    enqueue(opNode);
                     break;
                 case '*':
-                    enqueue(new Node(0, 0, Node.Type.Operator, Node.TypeOperator.Multiplication));
+                    opNode = new Node(0, 0, Type.Operator, TypeOperator.Multiplication);
+                    enqueue(opNode);
                     break;
             }
         }
     }
 
-    void processQueue(){
+    void processQueue() {
         Node initial = dequeue();
         addRN(21, initial.mValue, currentLine++);
 
-        while(head != null){
+        int position = 0;
+        while (head != null) {
             Node current = dequeue();
-            if(current.mType == Node.Type.Operator){
+            Node operator = new Node();
 
+            if (current.mType == Type.Number || current.mType == Type.Register) {
+                if(operator.mTypeOperator != null){
+                    if(current.mTypeOperator == TypeOperator.Multiplication){
+                        multiply(current, position);
+                    }else if(operator.mTypeOperator == TypeOperator.Addition){
+                        if(current.mType == Type.Number){
+                            addRN(21, current.mValue, position);
+                        }else{
+                            addRR(21, current.mRegister, position);
+                        }
+                    }else{
+                        if(current.mType == Type.Number){
+                            subRN(21, current.mValue, position);
+                        }else{
+                            subRR(21, current.mRegister, position);
+                        }
+                    }
+                }
+            }else{
+                operator = current;
             }
+
+            position++;
+        }
+    }
+
+    void multiply(Node operand, int position){
+        for(int i =0; i < operand.mValue; i++){
         }
     }
 
@@ -267,17 +301,16 @@ class UserSolution {
         return ans;
     }
 
+    public enum Type {Number, Operator, Register}
 
-    private static class Node {
-        public enum Type {Number, Operator, Register}
+    public enum TypeOperator {Multiplication, Addition, Substraction}
 
-        public enum TypeOperator {Multiplication, Addition, Substraction}
-
-        public static int mValue;
-        public static int mRegister;
-        public static Type mType;
-        public static TypeOperator mTypeOperator;
-        public static Node next;
+    private class Node {
+        public int mValue;
+        public int mRegister;
+        public Type mType;
+        public TypeOperator mTypeOperator;
+        public Node next;
 
         public Node(int value, int register, Type type, TypeOperator typeOperator) {
             mValue = value;
@@ -285,6 +318,8 @@ class UserSolution {
             mType = type;
             mTypeOperator = typeOperator;
         }
+
+        public Node(){}
     }
 
     //Queue function
