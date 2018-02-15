@@ -1,5 +1,8 @@
 package code;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Scanner;
 
 /**
@@ -8,13 +11,16 @@ import java.util.Scanner;
 public class BiggerIsGreater {
 
     private static char[] c;
-    public static void main(String[] args){
-        Scanner sc = new Scanner(System.in);
-        int T = sc.nextInt();
 
-        for(int t=0; t < T; t++){
-            String s = sc.next();
-
+    public static void main(String[] args) throws IOException {
+        BufferedReader sc = new BufferedReader(new InputStreamReader(System.in));
+        int T = Integer.parseInt(sc.readLine());
+//        String line = "";
+//        Scanner sc = new Scanner(System.in);
+//        long T = sc.nextInt();
+        for(long t=0; t < T; t++){
+            String s = sc.readLine();
+            c = null;
             c = s.toCharArray();
             int firstChar = findFirstChar(s.toCharArray());
             if(firstChar == -1){
@@ -32,11 +38,13 @@ public class BiggerIsGreater {
             }
 
         }
-
     }
 
     private static int findFirstChar(char[] c){
         int length = c.length;
+        if(length == 1){
+            return -1;
+        }
         for(int i = length - 2; i >= 0; i--){
             if(c[i] < c[i+1]){
                 return i;
@@ -48,6 +56,9 @@ public class BiggerIsGreater {
 
     private static int findSecondChar(int start, char[] c){
         int length = c.length;
+        if(length == 1){
+            return -1;
+        }
         char min = 'z';
         int index = -1;
         for(int i = start+1 ; i < length; i++){
@@ -103,6 +114,13 @@ public class BiggerIsGreater {
         }
     }
 
+    private static void printChar(char[] c){
+        for(int i=0; i < c.length; i++){
+            System.out.print(c[i]);
+        }
+        System.out.println();
+    }
+
 }
 
         /*
@@ -112,4 +130,18 @@ public class BiggerIsGreater {
 
         output
         ocsmerkgidvddsazqxjbqlrrxcotrnfvtnlutlfcafdlwiismslaytqdbvlmcpapfbmzxmftrkkqvkpflxpezzapllerxyzlfc
+
+
+        input
+        4
+        zyxwqpnnmlljihhgfffeeeddca
+        tccjaoahruyblpejzgkfnpmqoajnvqnvqmcdwpioxkrllofvixidannpvzxtpnzdtyxfkcloanztgkvgsngqxahnzmtrh
+        nxczkgxcazmwlutxjwmflhqhfgnqf
+        ehxxdsuhoowxpbxiwxjrhe
+
+        output
+        no answer
+        tccjaoahruyblpejzgkfnpmqoajnvqnvqmcdwpioxkrllofvixidannpvzxtpnzdtyxfkcloanztgkvgsngqxahnzrhmt
+        nxczkgxcazmwlutxjwmflhqhfgqfn
+        ehxxdsuhoowxpbxiwxrehj
         */

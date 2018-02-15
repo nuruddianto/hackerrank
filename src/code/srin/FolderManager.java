@@ -272,10 +272,6 @@ public class FolderManager {
     public int infect(int id) {
         File fileToInfect = searchBst(bst, id);
 
-        if(id == 97502){
-            String s = "";
-        }
-
         if(fileToInfect.getFileSize() == 0){
             return 0;
         }

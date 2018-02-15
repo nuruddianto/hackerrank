@@ -1,0 +1,4 @@
+[credential]
+
+[difftool]
+	useBuiltin = true

@@ -1,0 +1,84 @@
+Disc Scheduling
+
+To access the disk, implement a scheduling program.
+
+The track processing order by each scheduling is as follows :
+	FCFS (first come first served) : Processed according to the requested order.
+	SSTF (Shortest Seek Time First) : From the current head position, the request with the shortest search distance will be processed first. If there are two possible tracks, the left track (with smaller number) will be processed first.
+	LOOK : Of the head processing direction, the request with the shortest distance will be processed. If there is nothing left to process from the current processing direction, the direction will change its direction to the opposite. The initial processing direction is the left direction (direction towards which the track number gets smaller).
+	C-LOOK : Same as LOOK, the request with the shortest search distance will be processed first. The difference to LOOK is that the processing direction is fixed to the left. And if there is nothing left to process, the head will go back to the right and process the track that is in the very right side.
+	
+The head moves to the position of the track that is to be processed.
+The head processing direction of Look does not get influenced by the other scheduling method.
+
+[Fig.1] in the following demonstrates the movement of head of each scheduling method and its processing order. Suppose the size of a track is 200, the initial position of the head is 60, and the request order is given such as 98, 183, 37, 122, 14, 124, 65, 67.
+
+	FCFS : 98, 183, 37, 122, 14, 124, 65, 67
+	SSTF : 65, 67, 37, 14, 98, 122, 124, 183
+	LOOK : 37, 14, 65, 67, 98, 122, 124, 183
+	C-LOOK : 37, 14, 183, 124, 122, 98, 67, 65
+	
+In case of LOOK, after the last track 14 in the left is processed, the processing direction of the head changes to the right direction.
+In the case of C-LOOK, after the last track 14 in the left is processed, track 183 in the very left is processed.
+
+To help understand the scheduling method [Fig.1] shows how, after all request are complete, processing can be done with just one method. In the actual input, a new request can occur during processing and the 4 methods are called randomly.
+
+Refer to the following API descriptions and implement each function.
+
+void init(int track_size, int head)
+	This is called at the beginning of each test case.
+
+	parameters : 
+		track_size : Track size, the actual number of tract that is called is (0 ~ track_size-1)
+		head : initial position of head
+		
+void request(int track)
+	Request a new track with a number.
+	
+	parameters : 
+		track : requested track number.
+		
+int fcfs()
+	Of the requested track list up to this point, process one track with the FCFS method and return the number of the track number.
+	
+	returns : 
+		Track number that is processed with the FCFS method.
+		
+int sstf() 
+	Of the requested track list up to this point, process one track with the SSTF method and return the number of the track number.
+	
+	returns : 
+		Track number that is processed with the SSTF method.
+
+int look()
+	Of the requested track list up to this point, process one track with the LOOK method and return the number of the track number.
+	
+	returns : 
+		Track number that is processed with the LOOK method.
+		
+int clook()
+	Of the requested track list up to this point, process one track with the C-LOOK method and return the number of the track number.
+	
+	returns : 
+		Track number that is processed with the C-LOOK method.
+		
+		
+[Contraints]
+
+The size of the track (track_size) is given as an integer that is grater than or equal to 200 and less than or equal to 100,000 (200 <= track_size <= 100,000).
+The initial value of head is given as an integer that is grater than or equal to 0 and less than track_size. (0 <= head < track_size).
+The number of a requested track is given as an integer that is grater than or equal to 0 and less than track_size. (0 <= track < track_size)
+A track number will not be called more than once.
+The request function can be called maximum track_size times.
+The four scheduling functions are only called, if there is at least one track to process.
+The processing direction of LOOK can only be changed by the look() function. (has nothing to do with the processing direction of head according to previous functions such as FCFS, SSTF, C-LOOK)
+The shortest distance that can occur is 0.
+The input is always given within the constraint.
+
+[input/output]
+	#1 8
+	#2 8
+	#3 8
+	#4 20
+	#5 7918
+	Total score: 7926

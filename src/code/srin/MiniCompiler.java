@@ -212,8 +212,7 @@ class UserSolution {
         cpu.save(1 << 31, currentLine++);
         //process
         parseString(str);
-        processQueue();
-        cpu.save(1 << 23 | 21 << 18, currentLine++);
+        cpu.save(1 << 23 | 20 << 18, currentLine++);
         // TO DO
     }
 
@@ -250,44 +249,145 @@ class UserSolution {
         }
     }
 
-    void processQueue() {
-        Node initial = dequeue();
-        addRN(21, initial.mValue, currentLine++);
+    void processString(String str) {
 
-        int position = 0;
-        while (head != null) {
-            Node current = dequeue();
-            Node operator = new Node();
+        int startIndex = 0;
+        //get first operand
+        if (str.charAt(startIndex) == 'R') {
+            //save all value in R20
+            addRR(20, str.charAt(startIndex + 1) - '0', currentLine++);
+            startIndex = 2;
+        } else {
+            addRN(20, str.charAt(startIndex) - '0', currentLine++);
+            startIndex = 1;
+        }
 
-            if (current.mType == Type.Number || current.mType == Type.Register) {
-                if(operator.mTypeOperator != null){
-                    if(current.mTypeOperator == TypeOperator.Multiplication){
-                        multiply(current, position);
-                    }else if(operator.mTypeOperator == TypeOperator.Addition){
-                        if(current.mType == Type.Number){
-                            addRN(21, current.mValue, position);
-                        }else{
-                            addRR(21, current.mRegister, position);
-                        }
-                    }else{
-                        if(current.mType == Type.Number){
-                            subRN(21, current.mValue, position);
-                        }else{
-                            subRR(21, current.mRegister, position);
-                        }
+
+        for (int i = startIndex; i < str.length(); ) {
+            Node firstOperand = null;
+            Node secondOperand = null;
+
+            Node firstOperator = null;
+            Node secondOperator = null;
+
+            if (str.charAt(i) == '+' || str.charAt(i) == '-' || str.charAt(i) == '*') {
+                if (firstOperator == null) {
+                    firstOperator = new Node(0, 0, Type.Operator, findType(str.charAt(i)));
+                } else {
+                    secondOperator = new Node(0, 0, Type.Operator, findType(str.charAt(i)));
+                }
+                i++;
+            } else {
+                if (str.charAt(i) == 'R') {
+                    if (firstOperand == null) {
+                        firstOperand = new Node(0, str.charAt(i + 1) - '0', Type.Register, null);
+                    } else if (secondOperand == null) {
+                        secondOperand = new Node(0, str.charAt(i + 1) - '0', Type.Register, null);
+                    }
+                } else {
+                    if (firstOperand == null) {
+                        firstOperand = new Node(str.charAt(i + 1) - '0', 0, Type.Number, null);
+                    } else if (secondOperand == null) {
+                        secondOperand = new Node(str.charAt(i + 1) - '0', 0, Type.Number, null);
                     }
                 }
-            }else{
-                operator = current;
             }
 
-            position++;
+            if (firstOperand != null && secondOperand != null && firstOperator != null && secondOperator != null) {
+                if (secondOperator.mTypeOperator == TypeOperator.Multiplication) {
+                    multiply(firstOperand, secondOperand, currentLine);
+                    switch (firstOperator.mTypeOperator) {
+                        case Substraction:
+                            subRR(20, 21, currentLine++);
+                            break;
+                        case Addition:
+                            addRR(20, 21, currentLine++);
+                            break;
+                    }
+                    firstOperand = null;
+                    secondOperand = null;
+                    firstOperator = null;
+                    secondOperator = null;
+
+                } else {
+                    switch (firstOperator.mTypeOperator) {
+                        case Substraction:
+                            if (firstOperand.mType == Type.Register) {
+                                subRR(20, firstOperand.mRegister, currentLine++);
+                            } else {
+                                subRN(20, firstOperand.mValue, currentLine++);
+                            }
+                            break;
+                        case Addition:
+                            if (firstOperand.mType == Type.Register) {
+                                addRR(20, firstOperand.mRegister, currentLine++);
+                            } else {
+                                addRN(20, firstOperand.mValue, currentLine++);
+                            }
+                            break;
+                    }
+
+                    firstOperand = secondOperand;
+                    secondOperand = null;
+                }
+
+            }
         }
     }
 
-    void multiply(Node operand, int position){
-        for(int i =0; i < operand.mValue; i++){
+    TypeOperator findType(char c) {
+        TypeOperator t = null;
+        switch (c) {
+            case '+':
+                t = TypeOperator.Addition;
+                break;
+            case '-':
+                t = TypeOperator.Substraction;
+                break;
+            case '*':
+                t = TypeOperator.Multiplication;
+                break;
         }
+        return t;
+    }
+
+//    void processQueue() {
+//        Node initial = dequeue();
+//        addRN(21, initial.mValue, currentLine++);
+//
+//        int position = 0;
+//        while (head != null) {
+//            Node current = dequeue();
+//            Node operator = new Node();
+//
+//            if (current.mType == Type.Number || current.mType == Type.Register) {
+//                if (operator.mTypeOperator != null) {
+//                    if (current.mTypeOperator == TypeOperator.Multiplication) {
+//                        multiply(current, position);
+//                    } else if (operator.mTypeOperator == TypeOperator.Addition) {
+//                        if (current.mType == Type.Number) {
+//                            addRN(21, current.mValue, position);
+//                        } else {
+//                            addRR(21, current.mRegister, position);
+//                        }
+//                    } else {
+//                        if (current.mType == Type.Number) {
+//                            subRN(21, current.mValue, position);
+//                        } else {
+//                            subRR(21, current.mRegister, position);
+//                        }
+//                    }
+//                }
+//            } else {
+//                operator = current;
+//            }
+//
+//            position++;
+//        }
+//    }
+
+    void multiply(Node firstOperand, Node secondOperand, int position) {
+
     }
 
     private static int stringToInteger(String str) {
@@ -319,7 +419,8 @@ class UserSolution {
             mTypeOperator = typeOperator;
         }
 
-        public Node(){}
+        public Node() {
+        }
     }
 
     //Queue function
